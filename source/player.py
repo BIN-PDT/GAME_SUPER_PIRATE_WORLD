@@ -1,13 +1,15 @@
 from settings import *
-from os.path import join
 from timers import Timer
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, semicollision_sprites):
+    def __init__(self, pos, frames, groups, collision_sprites, semicollision_sprites):
         super().__init__(groups)
+        # ANIMATION.
+        self.frames, self.frame_index = frames, 0
+        self.state, self.facing_right = "idle", True
         # SETUP.
-        self.image = pygame.image.load(join("images", "player", "idle", "0.png"))
+        self.image = self.frames[self.state][self.frame_index]
         self.rect = self.image.get_frect(topleft=pos)
         self.hitbox = self.rect.inflate(-76, -36)
         self.old_rect = self.hitbox.copy()
@@ -19,6 +21,8 @@ class Player(pygame.sprite.Sprite):
         self.JUMP_HEIGHT = 900
         self.can_jump = False
         self.on_surface = {"floor": False, "left": False, "right": False}
+        # ATTACK.
+        self.is_attacking = False
         # COLLISION.
         self.collision_sprites = collision_sprites
         self.semicollision_sprites = semicollision_sprites
@@ -28,6 +32,7 @@ class Player(pygame.sprite.Sprite):
             "wall jump": Timer(400),
             "wall slide block": Timer(250),
             "platform skip": Timer(300),
+            "attack block": Timer(500),
         }
 
     def input(self):
@@ -38,12 +43,17 @@ class Player(pygame.sprite.Sprite):
             direction = 0
             if keys[pygame.K_RIGHT]:
                 direction += 1
+                self.facing_right = True
             if keys[pygame.K_LEFT]:
                 direction -= 1
+                self.facing_right = False
             self.direction.x = direction
             # FALL FROM PLATFORM.
             if keys[pygame.K_DOWN]:
                 self.timers["platform skip"].activate()
+            # ATTACK.
+            if keys[pygame.K_x]:
+                self.attack()
         # JUMP.
         if keys[pygame.K_SPACE]:
             self.can_jump = True
@@ -82,6 +92,7 @@ class Player(pygame.sprite.Sprite):
                 self.timers["wall jump"].activate()
                 self.direction.y = -self.JUMP_HEIGHT
                 self.direction.x = 1 if self.on_surface["left"] else -1
+                self.facing_right = self.on_surface["left"]
 
     def collide(self, axis):
         for sprite in self.collision_sprites:
@@ -157,6 +168,44 @@ class Player(pygame.sprite.Sprite):
         for timer in self.timers.values():
             timer.update()
 
+    def attack(self):
+        if not self.timers["attack block"].is_active:
+            self.timers["attack block"].activate()
+            self.is_attacking = True
+            self.frame_index = 0
+
+    def check_state(self):
+        # ON THE GROUND.
+        if self.on_surface["floor"]:
+            if self.is_attacking:
+                self.state = "attack"
+            else:
+                self.state = "idle" if self.direction.x == 0 else "run"
+        # ON THE AIR.
+        else:
+            if self.is_attacking:
+                self.state = "air_attack"
+            else:
+                if self.on_surface["left"] or self.on_surface["right"]:
+                    self.state = "wall"
+                else:
+                    self.state = "jump" if self.direction.y < 0 else "fall"
+
+    def animate(self, dt):
+        animation = self.frames[self.state]
+        self.frame_index += ANIMATION_SPEED * dt
+        if self.frame_index >= len(animation):
+            self.frame_index = 0
+            # IDLING AFTER ATTACKING.
+            self.is_attacking = False
+            if self.state == "attack":
+                self.state = "idle"
+
+        self.image = animation[int(self.frame_index)]
+        # FLIP IMAGE.
+        if not self.facing_right:
+            self.image = pygame.transform.flip(self.image, True, False)
+
     def update(self, dt):
         self.old_rect = self.hitbox.copy()
         self.update_timers()
@@ -164,3 +213,6 @@ class Player(pygame.sprite.Sprite):
         self.follow_platfrom(dt)
         self.move(dt)
         self.check_contact()
+
+        self.check_state()
+        self.animate(dt)

@@ -25,10 +25,8 @@ class Level:
                 elif layer == "Platforms":
                     groups.append(self.semicollision_sprites)
 
-                if layer == "BG":
+                if layer == "BG" or layer == "FG":
                     z = Z_LAYERS["bg tiles"]
-                elif layer == "FG":
-                    z = Z_LAYERS["fg"]
                 else:
                     z = Z_LAYERS["main"]
 
@@ -41,6 +39,7 @@ class Level:
             if name == "player":
                 self.player = Player(
                     pos=pos,
+                    frames=assets["player"],
                     groups=self.all_sprites,
                     collision_sprites=self.collision_sprites,
                     semicollision_sprites=self.semicollision_sprites,

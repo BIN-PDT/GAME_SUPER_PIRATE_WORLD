@@ -32,6 +32,7 @@ class Game:
             "big_chain": import_folder_list("images", "level", "big_chains"),
             "small_chain": import_folder_list("images", "level", "small_chains"),
             "candle_light": import_folder_list("images", "level", "candle light"),
+            "player": import_folder_dict("images", "player", subordinate=True),
         }
 
     def run(self):
