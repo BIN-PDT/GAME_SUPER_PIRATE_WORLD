@@ -3,7 +3,7 @@ from timers import Timer
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites):
+    def __init__(self, pos, groups, collision_sprites, semicollision_sprites):
         super().__init__(groups)
         # SETUP.
         self.image = pygame.Surface((48, 56))
@@ -19,11 +19,13 @@ class Player(pygame.sprite.Sprite):
         self.on_surface = {"floor": False, "left": False, "right": False}
         # COLLISION.
         self.collision_sprites = collision_sprites
+        self.semicollision_sprites = semicollision_sprites
         self.platform = None
         # TIMER.
         self.timers = {
             "wall jump": Timer(400),
             "wall slide block": Timer(250),
+            "platform skip": Timer(300),
         }
 
     def input(self):
@@ -37,6 +39,9 @@ class Player(pygame.sprite.Sprite):
             if keys[pygame.K_LEFT]:
                 direction -= 1
             self.direction.x = direction
+            # FALL FROM PLATFORM.
+            if keys[pygame.K_DOWN]:
+                self.timers["platform skip"].activate()
         # JUMP.
         if keys[pygame.K_SPACE]:
             self.can_jump = True
@@ -59,6 +64,7 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += self.direction.y * dt
             self.direction.y += self.GRAVITY / 2 * dt
         self.collide("Y")
+        self.semicollide()
         # JUMPING.
         if self.can_jump:
             self.can_jump = False
@@ -102,6 +108,18 @@ class Player(pygame.sprite.Sprite):
                     # FALL DOWN.
                     self.direction.y = 0
 
+    def semicollide(self):
+        if not self.timers["platform skip"].is_active:
+            for sprite in self.semicollision_sprites:
+                if sprite.rect.colliderect(self.rect):
+                    if (
+                        self.rect.bottom >= sprite.rect.top
+                        and self.old_rect.bottom <= sprite.old_rect.top
+                    ):
+                        self.rect.bottom = sprite.rect.top
+                        # FALL DOWN.
+                        self.direction.y = 0
+
     def check_contact(self):
         collision_rects = [sprite.rect for sprite in self.collision_sprites]
         # CHECK PLAYER IS ON THE FLOOR.
@@ -116,9 +134,15 @@ class Player(pygame.sprite.Sprite):
         pos = self.rect.topright + Vector((0, self.rect.height / 4))
         RIGHT_RECT = pygame.Rect(pos, (2, self.rect.height / 2))
         self.on_surface["right"] = RIGHT_RECT.collidelist(collision_rects) >= 0
+        # CHECK PLAYER IS ON A PLATFORM.
+        if self.direction.y >= 0:
+            semicollision_rects = [sprite.rect for sprite in self.semicollision_sprites]
+            self.on_surface["floor"] |= FLOOR_RECT.collidelist(semicollision_rects) >= 0
         # CHECK PLATFORM THAT PLAYER IS STANDING.
         self.platform = None
-        for sprite in self.collision_sprites:
+        for sprite in (
+            self.collision_sprites.sprites() + self.semicollision_sprites.sprites()
+        ):
             if hasattr(sprite, "can_move") and sprite.rect.colliderect(FLOOR_RECT):
                 self.platform = sprite
 

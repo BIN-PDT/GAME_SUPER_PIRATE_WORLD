@@ -10,6 +10,7 @@ class Level:
         # GROUP.
         self.all_sprites = pygame.sprite.Group()
         self.collision_sprites = pygame.sprite.Group()
+        self.semicollision_sprites = pygame.sprite.Group()
 
         self.load_data(tmx_map)
 
@@ -24,7 +25,12 @@ class Level:
         # OBJECT.
         for obj in tmx_map.get_layer_by_name("Objects"):
             if obj.name == "player":
-                Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                Player(
+                    pos=(obj.x, obj.y),
+                    groups=self.all_sprites,
+                    collision_sprites=self.collision_sprites,
+                    semicollision_sprites=self.semicollision_sprites,
+                )
         # MOVING OBJECT.
         for obj in tmx_map.get_layer_by_name("Moving Objects"):
             if obj.name == "helicopter":
@@ -41,7 +47,7 @@ class Level:
                     end_pos = pos[0] + width / 2, pos[1] + height
 
                 MovingSprite(
-                    groups=(self.all_sprites, self.collision_sprites),
+                    groups=(self.all_sprites, self.semicollision_sprites),
                     start_pos=start_pos,
                     end_pos=end_pos,
                     axis=axis,
