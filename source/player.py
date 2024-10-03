@@ -1,4 +1,5 @@
 from settings import *
+from os.path import join
 from timers import Timer
 
 
@@ -6,10 +7,10 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites, semicollision_sprites):
         super().__init__(groups)
         # SETUP.
-        self.image = pygame.Surface((48, 56))
-        self.image.fill("red")
+        self.image = pygame.image.load(join("images", "player", "idle", "0.png"))
         self.rect = self.image.get_frect(topleft=pos)
-        self.old_rect = self.rect.copy()
+        self.hitbox = self.rect.inflate(-76, -36)
+        self.old_rect = self.hitbox.copy()
         # MOVEMENT.
         self.direction = Vector()
         self.SPEED = 200
@@ -48,7 +49,7 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, dt):
         # WALKING.
-        self.rect.x += self.direction.x * self.SPEED * dt
+        self.hitbox.x += self.direction.x * self.SPEED * dt
         self.collide("X")
         # SLIDING.
         if (
@@ -57,14 +58,15 @@ class Player(pygame.sprite.Sprite):
             and not self.timers["wall slide block"].is_active
         ):
             self.direction.y = 0
-            self.rect.y += self.GRAVITY / 10 * dt
+            self.hitbox.y += self.GRAVITY / 10 * dt
         # FALLING.
         else:
             self.direction.y += self.GRAVITY / 2 * dt
-            self.rect.y += self.direction.y * dt
+            self.hitbox.y += self.direction.y * dt
             self.direction.y += self.GRAVITY / 2 * dt
         self.collide("Y")
         self.semicollide()
+        self.rect.center = self.hitbox.center
         # JUMPING.
         if self.can_jump:
             self.can_jump = False
@@ -82,57 +84,57 @@ class Player(pygame.sprite.Sprite):
 
     def collide(self, axis):
         for sprite in self.collision_sprites:
-            if sprite.rect.colliderect(self.rect):
+            if sprite.rect.colliderect(self.hitbox):
                 if axis == "X":
                     if (
-                        self.rect.left <= sprite.rect.right
+                        self.hitbox.left <= sprite.rect.right
                         and self.old_rect.left >= sprite.old_rect.right
                     ):
-                        self.rect.left = sprite.rect.right
+                        self.hitbox.left = sprite.rect.right
                     elif (
-                        self.rect.right >= sprite.rect.left
+                        self.hitbox.right >= sprite.rect.left
                         and self.old_rect.right <= sprite.old_rect.left
                     ):
-                        self.rect.right = sprite.rect.left
+                        self.hitbox.right = sprite.rect.left
                 else:
                     if (
-                        self.rect.top <= sprite.rect.bottom
+                        self.hitbox.top <= sprite.rect.bottom
                         and self.old_rect.top >= sprite.old_rect.bottom
                     ):
-                        self.rect.top = sprite.rect.bottom
+                        self.hitbox.top = sprite.rect.bottom
                     elif (
-                        self.rect.bottom >= sprite.rect.top
+                        self.hitbox.bottom >= sprite.rect.top
                         and self.old_rect.bottom <= sprite.old_rect.top
                     ):
-                        self.rect.bottom = sprite.rect.top
+                        self.hitbox.bottom = sprite.rect.top
                     # FALL DOWN.
                     self.direction.y = 0
 
     def semicollide(self):
         if not self.timers["platform skip"].is_active:
             for sprite in self.semicollision_sprites:
-                if sprite.rect.colliderect(self.rect):
+                if sprite.rect.colliderect(self.hitbox):
                     if (
-                        self.rect.bottom >= sprite.rect.top
+                        self.hitbox.bottom >= sprite.rect.top
                         and self.old_rect.bottom <= sprite.old_rect.top
                     ):
-                        self.rect.bottom = sprite.rect.top
+                        self.hitbox.bottom = sprite.rect.top
                         # FALL DOWN.
                         self.direction.y = 0
 
     def check_contact(self):
         collision_rects = [sprite.rect for sprite in self.collision_sprites]
         # CHECK PLAYER IS ON THE FLOOR.
-        pos = self.rect.bottomleft
-        FLOOR_RECT = pygame.Rect(pos, (self.rect.width, 2))
+        pos = self.hitbox.bottomleft
+        FLOOR_RECT = pygame.Rect(pos, (self.hitbox.width, 2))
         self.on_surface["floor"] = FLOOR_RECT.collidelist(collision_rects) >= 0
         # CHECK RIGHT WALL SLIDING.
-        pos = self.rect.topleft + Vector((-2, self.rect.height / 4))
-        LEFT_RECT = pygame.Rect(pos, (2, self.rect.height / 2))
+        pos = self.hitbox.topleft + Vector((-2, self.hitbox.height / 4))
+        LEFT_RECT = pygame.Rect(pos, (2, self.hitbox.height / 2))
         self.on_surface["left"] = LEFT_RECT.collidelist(collision_rects) >= 0
         # CHECK LEFT WALL SLIDING.
-        pos = self.rect.topright + Vector((0, self.rect.height / 4))
-        RIGHT_RECT = pygame.Rect(pos, (2, self.rect.height / 2))
+        pos = self.hitbox.topright + Vector((0, self.hitbox.height / 4))
+        RIGHT_RECT = pygame.Rect(pos, (2, self.hitbox.height / 2))
         self.on_surface["right"] = RIGHT_RECT.collidelist(collision_rects) >= 0
         # CHECK PLAYER IS ON A PLATFORM.
         if self.direction.y >= 0:
@@ -148,14 +150,14 @@ class Player(pygame.sprite.Sprite):
 
     def follow_platfrom(self, dt):
         if self.platform:
-            self.rect.topleft += self.platform.direction * self.platform.SPEED * dt
+            self.hitbox.topleft += self.platform.direction * self.platform.SPEED * dt
 
     def update_timers(self):
         for timer in self.timers.values():
             timer.update()
 
     def update(self, dt):
-        self.old_rect = self.rect.copy()
+        self.old_rect = self.hitbox.copy()
         self.update_timers()
         self.input()
         self.follow_platfrom(dt)
