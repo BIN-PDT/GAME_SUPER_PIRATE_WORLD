@@ -11,6 +11,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(topleft=pos)
         self.hitbox = self.rect.inflate(-76, -36)
         self.old_rect = self.hitbox.copy()
+        self.z = Z_LAYERS["main"]
         # MOVEMENT.
         self.direction = Vector()
         self.SPEED = 200

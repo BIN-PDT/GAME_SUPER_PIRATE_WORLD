@@ -6,32 +6,55 @@ from sprites import *
 
 
 class Level:
-    def __init__(self, tmx_map):
+    def __init__(self, tmx_map, assets):
         self.screen = pygame.display.get_surface()
         # GROUP.
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
 
-        self.load_data(tmx_map)
+        self.load_data(tmx_map, assets)
 
-    def load_data(self, tmx_map):
-        # TERRAIN.
-        for x, y, surf in tmx_map.get_layer_by_name("Terrain").tiles():
-            Sprite(
-                pos=(x * TILE_SIZE, y * TILE_SIZE),
-                surf=surf,
-                groups=(self.all_sprites, self.collision_sprites),
-            )
+    def load_data(self, tmx_map, assets):
+        # TILES.
+        for layer in ("BG", "Terrain", "FG", "Platforms"):
+            for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
+                groups = [self.all_sprites]
+                if layer == "Terrain":
+                    groups.append(self.collision_sprites)
+                elif layer == "Platforms":
+                    groups.append(self.semicollision_sprites)
+
+                if layer == "BG":
+                    z = Z_LAYERS["bg tiles"]
+                elif layer == "FG":
+                    z = Z_LAYERS["fg"]
+                else:
+                    z = Z_LAYERS["main"]
+
+                Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
         # OBJECT.
         for obj in tmx_map.get_layer_by_name("Objects"):
-            if obj.name == "player":
+            name = obj.name
+            pos = (obj.x, obj.y)
+
+            if name == "player":
                 self.player = Player(
-                    pos=(obj.x, obj.y),
+                    pos=pos,
                     groups=self.all_sprites,
                     collision_sprites=self.collision_sprites,
                     semicollision_sprites=self.semicollision_sprites,
                 )
+            else:
+                if name in ("barrel", "crate"):
+                    Sprite(
+                        pos=pos,
+                        surf=obj.image,
+                        groups=(self.all_sprites, self.collision_sprites),
+                    )
+                else:
+                    frames = assets["palms"][name] if "palm" in name else assets[name]
+                    AnimatedSprite(pos, frames, self.all_sprites)
         # MOVING OBJECT.
         for obj in tmx_map.get_layer_by_name("Moving Objects"):
             if obj.name == "helicopter":

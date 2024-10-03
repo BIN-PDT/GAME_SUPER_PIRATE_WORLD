@@ -1,4 +1,5 @@
 from settings import *
+from supports import *
 from os.path import join
 from pytmx.util_pygame import load_pygame
 
@@ -13,12 +14,24 @@ class Game:
         self.clock = pygame.time.Clock()
         # SETUP.
         self.load_assets()
-        self.current_stage = Level(self.TMX_MAPS[0])
+        self.current_stage = Level(self.TMX_MAPS[0], self.level_frames)
 
     def load_assets(self):
         # MAP.
         self.TMX_MAPS = {
             0: load_pygame(join("data", "levels", "omni.tmx")),
+        }
+        # LEVEL.
+        self.level_frames = {
+            "flag": import_folder_list("images", "level", "flag"),
+            "saw": import_folder_list("images", "enemies", "saw", "animation"),
+            "floor_spike": import_folder_list("images", "enemies", "floor_spikes"),
+            "palms": import_folder_dict("images", "level", "palms", subordinate=True),
+            "candle": import_folder_list("images", "level", "candle"),
+            "window": import_folder_list("images", "level", "window"),
+            "big_chain": import_folder_list("images", "level", "big_chains"),
+            "small_chain": import_folder_list("images", "level", "small_chains"),
+            "candle_light": import_folder_list("images", "level", "candle light"),
         }
 
     def run(self):
