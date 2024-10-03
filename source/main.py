@@ -25,6 +25,7 @@ class Game:
         self.level_frames = {
             "flag": import_folder_list("images", "level", "flag"),
             "saw": import_folder_list("images", "enemies", "saw", "animation"),
+            "saw_chain": import_image("images", "enemies", "saw", "saw_chain"),
             "floor_spike": import_folder_list("images", "enemies", "floor_spikes"),
             "palms": import_folder_dict("images", "level", "palms", subordinate=True),
             "candle": import_folder_list("images", "level", "candle"),
@@ -33,6 +34,12 @@ class Game:
             "small_chain": import_folder_list("images", "level", "small_chains"),
             "candle_light": import_folder_list("images", "level", "candle light"),
             "player": import_folder_dict("images", "player", subordinate=True),
+            "helicopter": import_folder_list("images", "level", "helicopter"),
+            "boat": import_folder_list("images", "objects", "boat"),
+            "spike": import_image("images", "enemies", "spike_ball", "spiked_ball"),
+            "spike_chain": import_image(
+                "images", "enemies", "spike_ball", "spiked_chain"
+            ),
         }
 
     def run(self):

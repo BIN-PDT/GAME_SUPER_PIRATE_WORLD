@@ -12,6 +12,7 @@ class Level:
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
+        self.damage_sprites = pygame.sprite.Group()
 
         self.load_data(tmx_map, assets)
 
@@ -56,26 +57,86 @@ class Level:
                     AnimatedSprite(pos, frames, self.all_sprites)
         # MOVING OBJECT.
         for obj in tmx_map.get_layer_by_name("Moving Objects"):
-            if obj.name == "helicopter":
-                width, height = obj.width, obj.height
-                pos = obj.x, obj.y
-                speed = obj.properties["speed"]
-                if width > height:
+            name = obj.name
+            pos = obj.x, obj.y
+            size = obj.width, obj.height
+
+            if name == "spike":
+                center = pos[0] + size[0] / 2, pos[1] + size[1] / 2
+                radius, speed = obj.properties["radius"], obj.properties["speed"]
+                start_angle = obj.properties["start_angle"]
+                end_angle = obj.properties["end_angle"]
+
+                Spike(
+                    pos=center,
+                    surf=assets["spike"],
+                    groups=(self.all_sprites, self.damage_sprites),
+                    radius=radius,
+                    speed=speed,
+                    start_angle=start_angle,
+                    end_angle=end_angle,
+                )
+                # PATH OF SPIKE.
+                for radius in range(0, obj.properties["radius"], 20):
+                    Spike(
+                        pos=center,
+                        surf=assets["spike_chain"],
+                        groups=self.all_sprites,
+                        radius=radius,
+                        speed=speed,
+                        start_angle=start_angle,
+                        end_angle=end_angle,
+                        z=Z_LAYERS["bg details"],
+                    )
+            else:
+                frames = assets[name]
+                groups = [self.all_sprites]
+                if obj.properties["platform"]:
+                    groups.append(self.semicollision_sprites)
+
+                if size[0] > size[1]:
                     axis = "X"
-                    start_pos = pos[0], pos[1] + height / 2
-                    end_pos = pos[0] + width, pos[1] + height / 2
+                    start_pos = pos[0], pos[1] + size[1] / 2
+                    end_pos = pos[0] + size[0], pos[1] + size[1] / 2
                 else:
                     axis = "Y"
-                    start_pos = pos[0] + width / 2, pos[1]
-                    end_pos = pos[0] + width / 2, pos[1] + height
+                    start_pos = pos[0] + size[0] / 2, pos[1]
+                    end_pos = pos[0] + size[0] / 2, pos[1] + size[1]
+                speed = obj.properties["speed"]
+                can_flip = obj.properties["flip"]
 
                 MovingSprite(
-                    groups=(self.all_sprites, self.semicollision_sprites),
+                    frames=frames,
+                    groups=groups,
                     start_pos=start_pos,
                     end_pos=end_pos,
                     axis=axis,
                     speed=speed,
+                    can_flip=can_flip,
                 )
+                # PATH OF SAW.
+                if name == "saw":
+                    surf = assets["saw_chain"]
+                    if axis == "X":
+                        y = start_pos[1] - surf.get_height() / 2
+                        left, right = int(start_pos[0]), int(end_pos[0])
+                        for x in range(left, right, 20):
+                            Sprite(
+                                pos=(x, y),
+                                surf=surf,
+                                groups=self.all_sprites,
+                                z=Z_LAYERS["bg details"],
+                            )
+                    else:
+                        x = start_pos[0] - surf.get_width() / 2
+                        top, bottom = int(start_pos[1]), int(end_pos[1])
+                        for y in range(top, bottom, 20):
+                            Sprite(
+                                pos=(x, y),
+                                surf=surf,
+                                groups=self.all_sprites,
+                                z=Z_LAYERS["bg details"],
+                            )
 
     def run(self, dt):
         self.all_sprites.update(dt)

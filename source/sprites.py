@@ -1,4 +1,5 @@
 from settings import *
+from math import sin, cos, radians
 
 
 class Sprite(pygame.sprite.Sprite):
@@ -29,11 +30,9 @@ class AnimatedSprite(Sprite):
         self.image = self.frames[int(self.frame_index)]
 
 
-class MovingSprite(Sprite):
-    def __init__(self, groups, start_pos, end_pos, axis, speed):
-        surf = pygame.Surface((200, 50))
-        surf.fill("white")
-        super().__init__(start_pos, surf, groups)
+class MovingSprite(AnimatedSprite):
+    def __init__(self, frames, groups, start_pos, end_pos, axis, speed, can_flip):
+        super().__init__(start_pos, frames, groups)
         # SETUP.
         if axis == "X":
             self.rect.midleft = start_pos
@@ -46,6 +45,9 @@ class MovingSprite(Sprite):
         self.direction = Vector(1, 0) if axis == "X" else Vector(0, 1)
         self.SPEED = speed
 
+        self.can_flip = can_flip
+        self.reverse = {"flip_x": False, "flip_y": False}
+
     def check_boundary(self):
         if self.move_direction == "X":
             if self.rect.left <= self.start_pos[0]:
@@ -54,6 +56,8 @@ class MovingSprite(Sprite):
             elif self.rect.right >= self.end_pos[0]:
                 self.direction.x = -1
                 self.rect.right = self.end_pos[0]
+            # REVERSE.
+            self.reverse["flip_x"] = self.direction.x < 0
         else:
             if self.rect.top <= self.start_pos[1]:
                 self.direction.y = 1
@@ -61,9 +65,53 @@ class MovingSprite(Sprite):
             elif self.rect.bottom >= self.end_pos[1]:
                 self.direction.y = -1
                 self.rect.bottom = self.end_pos[1]
+            # REVERSE.
+            self.reverse["flip_y"] = self.direction.y < 0
 
     def update(self, dt):
         self.old_rect = self.rect.copy()
-
+        # MOVE.
         self.rect.topleft += self.direction * self.SPEED * dt
         self.check_boundary()
+        # ANIMATE.
+        super().update(dt)
+        # FLIP IMAGE.
+        if self.can_flip:
+            self.image = pygame.transform.flip(self.image, **self.reverse)
+
+
+class Spike(Sprite):
+    def __init__(
+        self,
+        pos,
+        surf,
+        groups,
+        radius,
+        speed,
+        start_angle,
+        end_angle,
+        z=Z_LAYERS["main"],
+    ):
+        self.CENTER, self.RADIUS = pos, radius
+        self.START_ANGLE = start_angle
+        self.END_ANGLE = end_angle
+        # MOVEMENT.
+        self.IS_FULL_CIRCLE = end_angle == -1
+        self.SPEED = speed
+        self.angle = start_angle
+        self.direction = 1
+        # SETUP.
+        super().__init__(self.get_pos(), surf, groups, z)
+
+    def get_pos(self):
+        x = self.CENTER[0] + cos(radians(self.angle)) * self.RADIUS
+        y = self.CENTER[1] + sin(radians(self.angle)) * self.RADIUS
+        return x, y
+
+    def update(self, dt):
+        self.angle += self.direction * self.SPEED * dt
+        self.rect.center = self.get_pos()
+        # REVERSE.
+        if not self.IS_FULL_CIRCLE:
+            if self.angle >= self.END_ANGLE or self.angle <= self.START_ANGLE:
+                self.direction *= -1
