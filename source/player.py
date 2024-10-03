@@ -19,6 +19,7 @@ class Player(pygame.sprite.Sprite):
         self.on_surface = {"floor": False, "left": False, "right": False}
         # COLLISION.
         self.collision_sprites = collision_sprites
+        self.platform = None
         # TIMER.
         self.timers = {
             "wall jump": Timer(400),
@@ -115,6 +116,15 @@ class Player(pygame.sprite.Sprite):
         pos = self.rect.topright + Vector((0, self.rect.height / 4))
         RIGHT_RECT = pygame.Rect(pos, (2, self.rect.height / 2))
         self.on_surface["right"] = RIGHT_RECT.collidelist(collision_rects) >= 0
+        # CHECK PLATFORM THAT PLAYER IS STANDING.
+        self.platform = None
+        for sprite in self.collision_sprites:
+            if hasattr(sprite, "can_move") and sprite.rect.colliderect(FLOOR_RECT):
+                self.platform = sprite
+
+    def follow_platfrom(self, dt):
+        if self.platform:
+            self.rect.topleft += self.platform.direction * self.platform.SPEED * dt
 
     def update_timers(self):
         for timer in self.timers.values():
@@ -124,5 +134,6 @@ class Player(pygame.sprite.Sprite):
         self.old_rect = self.rect.copy()
         self.update_timers()
         self.input()
+        self.follow_platfrom(dt)
         self.move(dt)
         self.check_contact()
