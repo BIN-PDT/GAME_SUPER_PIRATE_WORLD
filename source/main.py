@@ -40,6 +40,9 @@ class Game:
             "spike_chain": import_image(
                 "images", "enemies", "spike_ball", "spiked_chain"
             ),
+            "tooth": import_folder_list("images", "enemies", "tooth", "run"),
+            "shell": import_folder_dict("images", "enemies", "shell", subordinate=True),
+            "pearl": import_image("images", "enemies", "bullets", "pearl"),
         }
 
     def run(self):

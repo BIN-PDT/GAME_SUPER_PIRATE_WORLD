@@ -3,16 +3,20 @@ from settings import *
 from groups import AllSprites
 from player import Player
 from sprites import *
+from enemies import *
 
 
 class Level:
     def __init__(self, tmx_map, assets):
         self.screen = pygame.display.get_surface()
+        # ASSETS.
+        self.pearl_surf = assets["pearl"]
         # GROUP.
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
+        self.pearl_sprites = pygame.sprite.Group()
 
         self.load_data(tmx_map, assets)
 
@@ -137,8 +141,50 @@ class Level:
                                 groups=self.all_sprites,
                                 z=Z_LAYERS["bg details"],
                             )
+        # ENEMIES.
+        for obj in tmx_map.get_layer_by_name("Enemies"):
+            pos = obj.x, obj.y
+
+            if obj.name == "tooth":
+                Tooth(
+                    pos=pos,
+                    frames=assets["tooth"],
+                    groups=(self.all_sprites, self.damage_sprites),
+                    collision_sprites=self.collision_sprites,
+                )
+            else:
+                Shell(
+                    pos=pos,
+                    frames=assets["shell"],
+                    groups=(self.all_sprites, self.collision_sprites),
+                    reverse=obj.properties["reverse"],
+                    player=self.player,
+                    create_pearl=self.create_pearl,
+                )
+
+    def create_pearl(self, pos, direction):
+        Pearl(
+            pos=pos,
+            surf=self.pearl_surf,
+            groups=(self.all_sprites, self.damage_sprites, self.pearl_sprites),
+            direction=direction,
+        )
+
+    def check_pearl_collision(self):
+        for sprite in self.collision_sprites:
+            pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
+
+    def check_hit_collision(self):
+        for sprite in self.damage_sprites:
+            if sprite.rect.colliderect(self.player.hitbox):
+                if isinstance(sprite, Pearl):
+                    sprite.kill()
 
     def run(self, dt):
+        # UPDATE.
         self.all_sprites.update(dt)
+        self.check_pearl_collision()
+        self.check_hit_collision()
+        # DRAW.
         self.screen.fill("black")
         self.all_sprites.draw(self.player.hitbox.center)
