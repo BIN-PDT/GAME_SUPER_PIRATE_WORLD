@@ -18,6 +18,7 @@ class Level:
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
+        self.tooth_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.item_sriptes = pygame.sprite.Group()
 
@@ -187,7 +188,7 @@ class Level:
                 Tooth(
                     pos=pos,
                     frames=assets["tooth"],
-                    groups=(self.all_sprites, self.damage_sprites),
+                    groups=(self.all_sprites, self.damage_sprites, self.tooth_sprites),
                     collision_sprites=self.collision_sprites,
                 )
             else:
@@ -228,6 +229,7 @@ class Level:
     def check_hit_collision(self):
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox):
+                self.player.get_damage()
                 if isinstance(sprite, Pearl):
                     Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
                     sprite.kill()
@@ -238,12 +240,29 @@ class Level:
             if sprites:
                 Particle(sprites[0].rect.center, self.particle_surfs, self.all_sprites)
 
+    def check_attack_collision(self):
+        for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
+            # FACING TO TARGET.
+            is_facing = (
+                self.player.rect.centerx < target.rect.centerx
+                if self.player.facing_right
+                else self.player.rect.centerx > target.rect.centerx
+            )
+
+            if (
+                is_facing
+                and self.player.rect.colliderect(target.rect)
+                and self.player.is_attacking
+            ):
+                target.reverse()
+
     def run(self, dt):
         # UPDATE.
         self.all_sprites.update(dt)
         self.check_pearl_collision()
         self.check_hit_collision()
         self.check_item_collision()
+        self.check_attack_collision()
         # DRAW.
         self.screen.fill("black")
         self.all_sprites.draw(self.player.hitbox.center)

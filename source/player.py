@@ -1,4 +1,5 @@
 from settings import *
+from math import sin
 from timers import Timer
 
 
@@ -33,6 +34,7 @@ class Player(pygame.sprite.Sprite):
             "wall slide block": Timer(250),
             "platform skip": Timer(300),
             "attack block": Timer(500),
+            "hit": Timer(400),
         }
 
     def input(self):
@@ -206,6 +208,17 @@ class Player(pygame.sprite.Sprite):
         if not self.facing_right:
             self.image = pygame.transform.flip(self.image, True, False)
 
+    def get_damage(self):
+        if not self.timers["hit"].is_active:
+            self.timers["hit"].activate()
+
+    def flicker(self):
+        if self.timers["hit"].is_active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey("black")
+            self.image = white_surf
+
     def update(self, dt):
         self.old_rect = self.hitbox.copy()
         self.update_timers()
@@ -216,3 +229,4 @@ class Player(pygame.sprite.Sprite):
 
         self.check_state()
         self.animate(dt)
+        self.flicker()

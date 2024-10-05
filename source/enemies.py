@@ -15,8 +15,14 @@ class Tooth(pygame.sprite.Sprite):
         # MOVEMENT.
         self.direction = choice((-1, 1))
         self.SPEED = 200
+        self.reverse_timer = Timer(1000)
         # COLLISION.
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
+
+    def reverse(self):
+        if not self.reverse_timer.is_active:
+            self.direction *= -1
+            self.reverse_timer.activate()
 
     def check_boundary(self):
         pos = self.rect.topleft + Vector(-1, 0)
@@ -45,6 +51,7 @@ class Tooth(pygame.sprite.Sprite):
             self.image = pygame.transform.flip(self.image, True, False)
 
     def update(self, dt):
+        self.reverse_timer.update()
         self.move(dt)
         self.animate(dt)
 
@@ -134,8 +141,13 @@ class Pearl(pygame.sprite.Sprite):
         # MOVEMENT.
         self.direction = direction
         self.SPEED = 150
-        self.timers = {"life": Timer(5000)}
+        self.timers = {"life": Timer(5000), "reverse": Timer(1000)}
         self.timers["life"].activate()
+
+    def reverse(self):
+        if not self.timers["reverse"].is_active:
+            self.direction *= -1
+            self.timers["reverse"].activate()
 
     def update(self, dt):
         for timer in self.timers.values():
