@@ -14,16 +14,38 @@ class Level:
         self.data = data
         self.pearl_surf = assets["pearl"]
         self.particle_surfs = assets["particle"]
+
+        level_data = self.get_level_data(tmx_map, assets)
+        self.LEVEL_WIDTH = level_data["cols"] * TILE_SIZE
+        self.LEVEL_HEIGHT = level_data["rows"] * TILE_SIZE
         # GROUP.
-        self.all_sprites = AllSprites()
+        self.all_sprites = AllSprites(level_data)
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.tooth_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.item_sriptes = pygame.sprite.Group()
-
+        # SETUP.
         self.load_data(tmx_map, assets, data)
+
+    @staticmethod
+    def get_level_data(tmx_map, assets):
+        instance = tmx_map.get_layer_by_name("Data")[0]
+        properties = instance.properties
+
+        return {
+            "rows": tmx_map.height,
+            "cols": tmx_map.width,
+            "bg_tile": assets["bg_tiles"].get(properties["bg"], None),
+            "top_limit": int(properties.get("top_limit", 0)),
+            "skyline": int(properties.get("horizontal_pos", WINDOW_HEIGHT / 2)),
+            "clouds": {
+                "small_cloud": assets["small_cloud"],
+                "large_cloud": assets["large_cloud"],
+            },
+            "level_unlock": properties.get("level_unlock", None),
+        }
 
     def load_data(self, tmx_map, assets, data):
         # TILES.
@@ -100,6 +122,9 @@ class Level:
                     )
 
                     AnimatedSprite(pos, frames, groups, z, animation_speed)
+            # LEVEL FINISH MILESTONE.
+            if name == "flag":
+                self.finish_milestone = pygame.FRect(pos, (obj.width, obj.height))
         # MOVING OBJECT.
         for obj in tmx_map.get_layer_by_name("Moving Objects"):
             name = obj.name
@@ -213,6 +238,25 @@ class Level:
                 groups=(self.all_sprites, self.item_sriptes),
                 item_type=name,
             )
+        # WATER.
+        for obj in tmx_map.get_layer_by_name("Water"):
+            for row in range(int(obj.height / TILE_SIZE)):
+                for col in range(int(obj.width / TILE_SIZE)):
+                    pos = obj.x + col * TILE_SIZE, obj.y + row * TILE_SIZE
+                    if row == 0:
+                        AnimatedSprite(
+                            pos=pos,
+                            frames=assets["water_top"],
+                            groups=self.all_sprites,
+                            z=Z_LAYERS["water"],
+                        )
+                    else:
+                        Sprite(
+                            pos=pos,
+                            surf=assets["water_body"],
+                            groups=self.all_sprites,
+                            z=Z_LAYERS["water"],
+                        )
 
     def create_pearl(self, pos, direction):
         Pearl(
@@ -264,6 +308,20 @@ class Level:
             ):
                 target.reverse()
 
+    def check_constraint(self):
+        # LEFT CONSTRAINT.
+        if self.player.hitbox.left <= 0:
+            self.player.hitbox.left = 0
+        # RIGHT CONSTRAINT.
+        if self.player.hitbox.right >= self.LEVEL_WIDTH:
+            self.player.hitbox.right = self.LEVEL_WIDTH
+        # FAILURE CONSTRAINT.
+        if self.player.hitbox.bottom >= self.LEVEL_HEIGHT:
+            pass
+        # SUCCESS CONSTRAINT.
+        if self.player.hitbox.colliderect(self.finish_milestone):
+            pass
+
     def run(self, dt):
         # UPDATE.
         self.all_sprites.update(dt)
@@ -271,6 +329,7 @@ class Level:
         self.check_hit_collision()
         self.check_item_collision()
         self.check_attack_collision()
+        self.check_constraint()
         # DRAW.
         self.screen.fill("black")
-        self.all_sprites.draw(self.player.hitbox.center)
+        self.all_sprites.draw(self.player.hitbox.center, dt)

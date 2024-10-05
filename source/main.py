@@ -49,6 +49,11 @@ class Game:
             "pearl": import_image("images", "enemies", "bullets", "pearl"),
             "items": import_folder_dict("images", "items", subordinate=True),
             "particle": import_folder_list("images", "effects", "particle"),
+            "water_top": import_folder_list("images", "level", "water", "top"),
+            "water_body": import_image("images", "level", "water", "body"),
+            "bg_tiles": import_folder_dict("images", "level", "bg", "tiles"),
+            "small_cloud": import_folder_list("images", "level", "clouds", "small"),
+            "large_cloud": import_image("images", "level", "clouds", "large_cloud"),
         }
         # UI.
         self.font = pygame.font.Font(join("images", "ui", "runescape_uf.ttf"), 32)
