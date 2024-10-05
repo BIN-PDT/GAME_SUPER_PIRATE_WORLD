@@ -3,6 +3,8 @@ from supports import *
 from os.path import join
 from pytmx.util_pygame import load_pygame
 
+from ui import UI
+from statistic import Data
 from level import Level
 
 
@@ -14,7 +16,9 @@ class Game:
         self.clock = pygame.time.Clock()
         # SETUP.
         self.load_assets()
-        self.current_stage = Level(self.TMX_MAPS[0], self.level_frames)
+        self.ui = UI(self.font, self.ui_frames)
+        self.data = Data(self.ui)
+        self.current_stage = Level(self.TMX_MAPS[0], self.level_frames, self.data)
 
     def load_assets(self):
         # MAP.
@@ -46,6 +50,12 @@ class Game:
             "items": import_folder_dict("images", "items", subordinate=True),
             "particle": import_folder_list("images", "effects", "particle"),
         }
+        # UI.
+        self.font = pygame.font.Font(join("images", "ui", "runescape_uf.ttf"), 32)
+        self.ui_frames = {
+            "heart": import_folder_list("images", "ui", "heart"),
+            "coin": import_image("images", "ui", "coin"),
+        }
 
     def run(self):
         while True:
@@ -57,6 +67,7 @@ class Game:
                     sys.exit()
             # GAME LOGIC.
             self.current_stage.run(dt)
+            self.ui.update(dt)
             pygame.display.update()
 
 

@@ -4,7 +4,9 @@ from timers import Timer
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, collision_sprites, semicollision_sprites):
+    def __init__(
+        self, pos, frames, groups, collision_sprites, semicollision_sprites, data
+    ):
         super().__init__(groups)
         # ANIMATION.
         self.frames, self.frame_index = frames, 0
@@ -15,6 +17,7 @@ class Player(pygame.sprite.Sprite):
         self.hitbox = self.rect.inflate(-76, -36)
         self.old_rect = self.hitbox.copy()
         self.z = Z_LAYERS["main"]
+        self.data = data
         # MOVEMENT.
         self.direction = Vector()
         self.SPEED = 200
@@ -211,6 +214,7 @@ class Player(pygame.sprite.Sprite):
     def get_damage(self):
         if not self.timers["hit"].is_active:
             self.timers["hit"].activate()
+            self.data.health -= 1
 
     def flicker(self):
         if self.timers["hit"].is_active and sin(pygame.time.get_ticks() * 100) >= 0:

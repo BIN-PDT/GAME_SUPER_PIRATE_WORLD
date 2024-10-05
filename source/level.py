@@ -8,9 +8,10 @@ from enemies import *
 
 
 class Level:
-    def __init__(self, tmx_map, assets):
+    def __init__(self, tmx_map, assets, data):
         self.screen = pygame.display.get_surface()
         # ASSETS.
+        self.data = data
         self.pearl_surf = assets["pearl"]
         self.particle_surfs = assets["particle"]
         # GROUP.
@@ -22,9 +23,9 @@ class Level:
         self.pearl_sprites = pygame.sprite.Group()
         self.item_sriptes = pygame.sprite.Group()
 
-        self.load_data(tmx_map, assets)
+        self.load_data(tmx_map, assets, data)
 
-    def load_data(self, tmx_map, assets):
+    def load_data(self, tmx_map, assets, data):
         # TILES.
         for layer in ("BG", "Terrain", "FG", "Platforms"):
             for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
@@ -67,6 +68,7 @@ class Level:
                     groups=self.all_sprites,
                     collision_sprites=self.collision_sprites,
                     semicollision_sprites=self.semicollision_sprites,
+                    data=data,
                 )
             else:
                 if name in ("barrel", "crate"):
@@ -239,6 +241,12 @@ class Level:
             sprites = pygame.sprite.spritecollide(self.player, self.item_sriptes, True)
             if sprites:
                 Particle(sprites[0].rect.center, self.particle_surfs, self.all_sprites)
+                # REWARDED.
+                reward = sprites[0].get_reward()
+                if reward[0] == "coin":
+                    self.data.coins += reward[1]
+                else:
+                    self.data.health += reward[1]
 
     def check_attack_collision(self):
         for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():

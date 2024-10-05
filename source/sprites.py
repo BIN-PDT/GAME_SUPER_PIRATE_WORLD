@@ -124,6 +124,19 @@ class Item(AnimatedSprite):
         self.rect.center = pos
         self.item_type = item_type
 
+    def get_reward(self):
+        match self.item_type:
+            case "silver":
+                return "coin", 1
+            case "gold":
+                return "coin", 5
+            case "diamond":
+                return "coin", 10
+            case "skull":
+                return "coin", 50
+            case "potion":
+                return "health", 1
+
 
 class Particle(AnimatedSprite):
     def __init__(self, pos, frames, groups):
