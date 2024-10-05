@@ -5,6 +5,9 @@ class Data:
         self.ui = ui
         # AT FIRST.
         self.ui.update_health(self._health)
+        # LEVEL STAGE.
+        self.unlocked_level = 3
+        self.current_level = 0
 
     @property
     def health(self):

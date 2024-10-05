@@ -2,7 +2,7 @@ from settings import *
 from random import choice, randint
 from timers import Timer
 
-from sprites import Sprite, Cloud
+from sprites import Sprite, Cloud, Icon
 
 
 class AllSprites(pygame.sprite.Group):
@@ -97,3 +97,32 @@ class AllSprites(pygame.sprite.Group):
         for sprite in sorted(self, key=lambda sprite: sprite.z):
             offset_pos = sprite.rect.topleft + self.offset
             self.screen.blit(sprite.image, offset_pos)
+
+
+class WorldSprite(pygame.sprite.Group):
+    def __init__(self, data):
+        super().__init__()
+        self.screen = pygame.display.get_surface()
+        self.offset = Vector()
+        self.data = data
+
+    def draw(self, player_pos):
+        self.offset.x = -(player_pos[0] - WINDOW_WIDTH / 2)
+        self.offset.y = -(player_pos[1] - WINDOW_HEIGHT / 2)
+        # DRAW BACKGROUND.
+        for sprite in sorted(self, key=lambda sprite: sprite.z):
+            if sprite.z < Z_LAYERS["main"]:
+                offset_pos = sprite.rect.topleft + self.offset
+                if sprite.z == Z_LAYERS["path"]:
+                    if sprite.level <= self.data.unlocked_level:
+                        self.screen.blit(sprite.image, offset_pos)
+                else:
+                    self.screen.blit(sprite.image, offset_pos)
+        # DRAW FOREGROUND.
+        for sprite in sorted(self, key=lambda sprite: sprite.rect.centery):
+            if sprite.z == Z_LAYERS["main"]:
+                offset_pos = sprite.rect.topleft + self.offset
+                if isinstance(sprite, Icon):
+                    self.screen.blit(sprite.image, offset_pos + Vector(0, -28))
+                else:
+                    self.screen.blit(sprite.image, offset_pos)

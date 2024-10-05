@@ -6,6 +6,7 @@ from pytmx.util_pygame import load_pygame
 from ui import UI
 from statistic import Data
 from level import Level
+from overworld import Overworld
 
 
 class Game:
@@ -18,10 +19,14 @@ class Game:
         self.load_assets()
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
-        self.current_stage = Level(self.TMX_MAPS[0], self.level_frames, self.data)
+        # self.current_stage = Level(self.TMX_MAPS[0], self.level_frames, self.data)
+        self.current_stage = Overworld(
+            self.TMX_OVERWORLD, self.overworld_frames, self.data
+        )
 
     def load_assets(self):
         # MAP.
+        self.TMX_OVERWORLD = load_pygame(join("data", "overworld", "overworld.tmx"))
         self.TMX_MAPS = {
             0: load_pygame(join("data", "levels", "omni.tmx")),
         }
@@ -60,6 +65,13 @@ class Game:
         self.ui_frames = {
             "heart": import_folder_list("images", "ui", "heart"),
             "coin": import_image("images", "ui", "coin"),
+        }
+        # OVERWORLD.
+        self.overworld_frames = {
+            "palms": import_folder_list("images", "overworld", "palm"),
+            "water": import_folder_list("images", "overworld", "water"),
+            "path": import_folder_dict("images", "overworld", "path"),
+            "icon": import_folder_dict("images", "overworld", "icon", subordinate=True),
         }
 
     def run(self):

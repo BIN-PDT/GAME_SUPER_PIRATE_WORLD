@@ -166,3 +166,26 @@ class Cloud(Sprite):
         # CHECK DESTROY.
         if self.rect.right <= 0:
             self.kill()
+
+
+class Node(pygame.sprite.Sprite):
+    def __init__(self, pos, surf, groups, data, level):
+        super().__init__(groups)
+        # SETUP.
+        self.image = surf
+        self.rect = self.image.get_frect(center=pos)
+        self.z = Z_LAYERS["path"]
+        self.data = data
+        self.level = level
+
+
+class Icon(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups):
+        super().__init__(groups)
+        # ANIMATION.
+        self.frames, self.frame_index = frames, 0
+        self.state = "idle"
+        # SETUP.
+        self.image = self.frames[self.state][self.frame_index]
+        self.rect = self.image.get_frect(center=pos)
+        self.z = Z_LAYERS["main"]
