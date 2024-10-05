@@ -1,4 +1,5 @@
 from settings import *
+from random import uniform
 
 from groups import AllSprites
 from player import Player
@@ -11,12 +12,14 @@ class Level:
         self.screen = pygame.display.get_surface()
         # ASSETS.
         self.pearl_surf = assets["pearl"]
+        self.particle_surfs = assets["particle"]
         # GROUP.
         self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
         self.semicollision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
+        self.item_sriptes = pygame.sprite.Group()
 
         self.load_data(tmx_map, assets)
 
@@ -36,6 +39,21 @@ class Level:
                     z = Z_LAYERS["main"]
 
                 Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
+        # BACKGROUND DETAILS.
+        for obj in tmx_map.get_layer_by_name("BG details"):
+            name = obj.name
+            pos = obj.x, obj.y
+            z = Z_LAYERS["bg details"]
+
+            if name == "static":
+                Sprite(pos, obj.image, self.all_sprites, z)
+            else:
+                frames = assets[name]
+                AnimatedSprite(pos, frames, self.all_sprites, z)
+                # CANDLE LIGHT EFFECT.
+                if name == "candle":
+                    pos += Vector(-20, -20)
+                    AnimatedSprite(pos, assets["candle_light"], self.all_sprites, z)
         # OBJECT.
         for obj in tmx_map.get_layer_by_name("Objects"):
             name = obj.name
@@ -58,7 +76,27 @@ class Level:
                     )
                 else:
                     frames = assets["palms"][name] if "palm" in name else assets[name]
-                    AnimatedSprite(pos, frames, self.all_sprites)
+                    if name == "floor_spike" and obj.properties["inverted"]:
+                        frames = [
+                            pygame.transform.flip(frame, False, True)
+                            for frame in frames
+                        ]
+
+                    groups = [self.all_sprites]
+                    if name in ("palm_small", "palm_large"):
+                        groups.append(self.semicollision_sprites)
+                    elif name in ("saw", "floor_spike"):
+                        groups.append(self.damage_sprites)
+
+                    z = Z_LAYERS["main"] if "bg" not in name else Z_LAYERS["bg details"]
+
+                    animation_speed = (
+                        ANIMATION_SPEED
+                        if "palm" not in name
+                        else ANIMATION_SPEED + uniform(-1, 1)
+                    )
+
+                    AnimatedSprite(pos, frames, groups, z, animation_speed)
         # MOVING OBJECT.
         for obj in tmx_map.get_layer_by_name("Moving Objects"):
             name = obj.name
@@ -161,6 +199,17 @@ class Level:
                     player=self.player,
                     create_pearl=self.create_pearl,
                 )
+        # ITEMS.
+        for obj in tmx_map.get_layer_by_name("Items"):
+            name = obj.name
+            pos = obj.x + TILE_SIZE / 2, obj.y + TILE_SIZE / 2
+
+            Item(
+                pos=pos,
+                frames=assets["items"][name],
+                groups=(self.all_sprites, self.item_sriptes),
+                item_type=name,
+            )
 
     def create_pearl(self, pos, direction):
         Pearl(
@@ -172,19 +221,29 @@ class Level:
 
     def check_pearl_collision(self):
         for sprite in self.collision_sprites:
-            pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
+            sprites = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
+            if sprites:
+                Particle(sprites[0].rect.center, self.particle_surfs, self.all_sprites)
 
     def check_hit_collision(self):
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox):
                 if isinstance(sprite, Pearl):
+                    Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
                     sprite.kill()
+
+    def check_item_collision(self):
+        if self.item_sriptes:
+            sprites = pygame.sprite.spritecollide(self.player, self.item_sriptes, True)
+            if sprites:
+                Particle(sprites[0].rect.center, self.particle_surfs, self.all_sprites)
 
     def run(self, dt):
         # UPDATE.
         self.all_sprites.update(dt)
         self.check_pearl_collision()
         self.check_hit_collision()
+        self.check_item_collision()
         # DRAW.
         self.screen.fill("black")
         self.all_sprites.draw(self.player.hitbox.center)

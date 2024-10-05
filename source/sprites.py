@@ -115,3 +115,25 @@ class Spike(Sprite):
         if not self.IS_FULL_CIRCLE:
             if self.angle >= self.END_ANGLE or self.angle <= self.START_ANGLE:
                 self.direction *= -1
+
+
+class Item(AnimatedSprite):
+    def __init__(self, pos, frames, groups, item_type):
+        super().__init__(pos, frames, groups)
+        # SETUP.
+        self.rect.center = pos
+        self.item_type = item_type
+
+
+class Particle(AnimatedSprite):
+    def __init__(self, pos, frames, groups):
+        super().__init__(pos, frames, groups, Z_LAYERS["fg"])
+        # SETUP.
+        self.rect.center = pos
+
+    def update(self, dt):
+        self.frame_index += self.ANIMATION_SPEED * dt
+        if self.frame_index < len(self.frames):
+            self.image = self.frames[int(self.frame_index)]
+        else:
+            self.kill()

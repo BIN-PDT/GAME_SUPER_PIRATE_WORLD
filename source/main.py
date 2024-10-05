@@ -43,6 +43,8 @@ class Game:
             "tooth": import_folder_list("images", "enemies", "tooth", "run"),
             "shell": import_folder_dict("images", "enemies", "shell", subordinate=True),
             "pearl": import_image("images", "enemies", "bullets", "pearl"),
+            "items": import_folder_dict("images", "items", subordinate=True),
+            "particle": import_folder_list("images", "effects", "particle"),
         }
 
     def run(self):
