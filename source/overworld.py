@@ -18,7 +18,9 @@ class Overworld:
         self.load_data(tmx_map, assets)
         self.load_path()
         # CONTROL.
-        self.current_node = [node for node in self.node_sprites if node.level == 0][0]
+        self.current_node = [
+            node for node in self.node_sprites if node.level == self.data.current_level
+        ][0]
 
     def load_data(self, tmx_map, assets):
         # TILES.

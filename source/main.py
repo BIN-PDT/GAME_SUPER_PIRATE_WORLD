@@ -104,18 +104,23 @@ class Game:
                 audios=self.audios,
             )
         else:
-            self.current_stage = Overworld(
-                tmx_map=self.TMX_OVERWORLD,
-                assets=self.overworld_frames,
-                data=self.data,
-                switch_command=self.switch_stage,
-            )
             # UPDATE PLAYER DATA.
             if unlock > 0:
                 if unlock > self.data.unlocked_level:
                     self.data.unlocked_level = unlock
             else:
                 self.data.health -= 1
+                # CHECK GAME OVER.
+                if self.data.health <= 0:
+                    self.data.health = 5
+                    self.data.unlocked_level -= 1
+
+            self.current_stage = Overworld(
+                tmx_map=self.TMX_OVERWORLD,
+                assets=self.overworld_frames,
+                data=self.data,
+                switch_command=self.switch_stage,
+            )
 
     def run(self):
         while True:

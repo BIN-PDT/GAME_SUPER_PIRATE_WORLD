@@ -292,6 +292,9 @@ class Level:
                 if isinstance(sprite, Pearl):
                     Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
                     sprite.kill()
+                # CHECK GAME OVER.
+                if self.data.health <= 0:
+                    self.switch_command("overworld")
 
     def check_item_collision(self):
         if self.item_sriptes:
