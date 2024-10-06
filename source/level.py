@@ -174,6 +174,8 @@ class Level:
                 groups = [self.all_sprites]
                 if obj.properties["platform"]:
                     groups.append(self.semicollision_sprites)
+                else:
+                    groups.append(self.damage_sprites)
 
                 if size[0] > size[1]:
                     axis = "X"
