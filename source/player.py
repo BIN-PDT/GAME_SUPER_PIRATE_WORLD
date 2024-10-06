@@ -181,7 +181,9 @@ class Player(pygame.sprite.Sprite):
                 self.platform = sprite
 
     def follow_platfrom(self, dt):
-        if self.platform:
+        if self.platform and (
+            self.direction.x == 0 or self.direction.x == self.platform.direction.x
+        ):
             self.hitbox.topleft += self.platform.direction * self.platform.SPEED * dt
 
     def update_timers(self):
