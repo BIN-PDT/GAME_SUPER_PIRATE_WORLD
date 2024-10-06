@@ -10,8 +10,11 @@ class Overworld:
         self.data = data
         # GROUP.
         self.all_sprites = WorldSprite(self.data)
+        self.node_sprites = pygame.sprite.Group()
         # SETUP.
         self.load_data(tmx_map, assets)
+        # CONTROL.
+        self.current_node = [node for node in self.node_sprites if node.level == 0][0]
 
     def load_data(self, tmx_map, assets):
         # TILES.
@@ -47,23 +50,75 @@ class Overworld:
             else:
                 z = Z_LAYERS["bg tiles"] if name == "stone" else Z_LAYERS["bg details"]
                 Sprite(pos, obj.image, self.all_sprites, z)
+        # PATHS.
+        self.paths = {}
+        for obj in tmx_map.get_layer_by_name("Paths"):
+            self.paths[obj.properties["end"]] = {
+                "start": obj.properties["start"],
+                "points": [
+                    (int(point.x + TILE_SIZE / 2), int(point.y + TILE_SIZE / 2))
+                    for point in obj.points
+                ],
+            }
         # NODE & PLAYER.
         for obj in tmx_map.get_layer_by_name("Nodes"):
             name = obj.name
             pos = obj.x + TILE_SIZE / 2, obj.y + TILE_SIZE / 2
 
             if name == "Node":
+                paths = {
+                    key: value
+                    for key, value in obj.properties.items()
+                    if key in ("left", "right", "up", "down")
+                }
+
                 Node(
                     pos=pos,
                     surf=assets["path"]["node"],
-                    groups=self.all_sprites,
-                    data=self.data,
+                    groups=(self.all_sprites, self.node_sprites),
                     level=obj.properties["stage"],
+                    data=self.data,
+                    paths=paths,
                 )
                 # PLAYER.
                 if obj.properties["stage"] == self.data.current_level:
                     self.icon = Icon(pos, assets["icon"], self.all_sprites)
 
+    def input(self):
+        if self.current_node:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT] and self.current_node.can_move("left"):
+                self.move("left")
+            if keys[pygame.K_RIGHT] and self.current_node.can_move("right"):
+                self.move("right")
+            if keys[pygame.K_UP] and self.current_node.can_move("up"):
+                self.move("up")
+            if keys[pygame.K_DOWN] and self.current_node.can_move("down"):
+                self.move("down")
+
+    def move(self, direction):
+        # GET THE TARGET NODE.
+        path_key = int(self.current_node.paths[direction][0])
+        # CHECK IF GO BACK INSTEAD OF GO TO.
+        path_reverse = self.current_node.paths[direction][-1] == "r"
+        # GET THE PATH.
+        points = self.paths[path_key]["points"]
+        path = points if not path_reverse else points[::-1]
+        # MOVE TO THE TARGET NODE.
+        self.icon.start_move(path)
+
+    def check_current_node(self):
+        if not self.icon.path:
+            self.current_node = pygame.sprite.spritecollide(
+                self.icon, self.node_sprites, False
+            )[0]
+        else:
+            self.current_node = None
+
     def run(self, dt):
+        # UPDATE.
+        self.input()
+        self.check_current_node()
         self.all_sprites.update(dt)
+        # DRAW.
         self.all_sprites.draw(self.icon.rect.center)

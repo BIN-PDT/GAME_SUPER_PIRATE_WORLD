@@ -169,14 +169,23 @@ class Cloud(Sprite):
 
 
 class Node(pygame.sprite.Sprite):
-    def __init__(self, pos, surf, groups, data, level):
+    def __init__(self, pos, surf, groups, level, data, paths):
         super().__init__(groups)
         # SETUP.
         self.image = surf
         self.rect = self.image.get_frect(center=pos)
         self.z = Z_LAYERS["path"]
-        self.data = data
         self.level = level
+        # PLAYER DATA.
+        self.data = data
+        # AVAILABLE PATHS.
+        self.paths = paths
+
+    def can_move(self, direction):
+        return (
+            direction in self.paths.keys()
+            and int(self.paths[direction][0]) <= self.data.unlocked_level
+        )
 
 
 class Icon(pygame.sprite.Sprite):
@@ -189,3 +198,65 @@ class Icon(pygame.sprite.Sprite):
         self.image = self.frames[self.state][self.frame_index]
         self.rect = self.image.get_frect(center=pos)
         self.z = Z_LAYERS["main"]
+        # MOVEMENT.
+        self.direction = Vector()
+        self.SPEED = 400
+        self.path = None
+
+    def start_move(self, path):
+        self.rect.center = path[0]
+        self.path = path[1:]
+        self.find_path()
+
+    def move(self, dt):
+        self.rect.center += self.direction * self.SPEED * dt
+        self.follow_path()
+
+    def find_path(self):
+        if self.path:
+            if self.rect.centerx == self.path[0][0]:
+                y = 1 if self.rect.centery < self.path[0][1] else -1
+                self.direction = Vector(0, y)
+            else:
+                x = 1 if self.rect.centerx < self.path[0][0] else -1
+                self.direction = Vector(x, 0)
+        else:
+            self.direction = Vector()
+
+    def follow_path(self):
+        # VERTICAL.
+        if (self.direction.y == 1 and self.rect.centery >= self.path[0][1]) or (
+            self.direction.y == -1 and self.rect.centery <= self.path[0][1]
+        ):
+            self.rect.centery = self.path[0][1]
+            del self.path[0]
+            self.find_path()
+        # HORIZONTAL.
+        elif (self.direction.x == 1 and self.rect.centerx >= self.path[0][0]) or (
+            self.direction.x == -1 and self.rect.centerx <= self.path[0][0]
+        ):
+            self.rect.centerx = self.path[0][0]
+            del self.path[0]
+            self.find_path()
+
+    def check_state(self):
+        if self.direction:
+            if self.direction.x == 0:
+                self.state = "up" if self.direction.y == -1 else "down"
+            else:
+                self.state = "left" if self.direction.x == -1 else "right"
+        else:
+            self.state = "idle"
+
+    def animate(self, dt):
+        animation = self.frames[self.state]
+        self.frame_index += ANIMATION_SPEED * dt
+        self.frame_index %= len(animation)
+
+        self.image = animation[int(self.frame_index)]
+
+    def update(self, dt):
+        if self.path:
+            self.move(dt)
+        self.check_state()
+        self.animate(dt)
