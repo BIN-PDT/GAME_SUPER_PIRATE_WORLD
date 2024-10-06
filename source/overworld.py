@@ -8,11 +8,14 @@ class Overworld:
     def __init__(self, tmx_map, assets, data):
         self.screen = pygame.display.get_surface()
         self.data = data
+        # ASSETS.
+        self.path_surfs = assets["path"]
         # GROUP.
         self.all_sprites = WorldSprite(self.data)
         self.node_sprites = pygame.sprite.Group()
         # SETUP.
         self.load_data(tmx_map, assets)
+        self.load_path()
         # CONTROL.
         self.current_node = [node for node in self.node_sprites if node.level == 0][0]
 
@@ -83,6 +86,67 @@ class Overworld:
                 # PLAYER.
                 if obj.properties["stage"] == self.data.current_level:
                     self.icon = Icon(pos, assets["icon"], self.all_sprites)
+
+    def load_path(self):
+        # PATH TILE (TARGET LEVEL: GRID PATH).
+        path_tiles = {}
+        for path_key, data in self.paths.items():
+            # CONVERT PIXEL POINT TO GRID POINT.
+            grid_points = [
+                Vector(int(point[0] / TILE_SIZE), int(point[1] / TILE_SIZE))
+                for point in data["points"]
+            ]
+            # STORE THE START POINT.
+            path_tiles[path_key] = [grid_points[0]]
+            # STORE THE REMAINING POINTS.
+            for index, point in enumerate(grid_points):
+                if index < len(grid_points) - 1:
+                    start_point, end_point = point, grid_points[index + 1]
+                    tiles = end_point - start_point
+                    # VERTICAL.
+                    if tiles.y:
+                        direction = 1 if tiles.y > 0 else -1
+                        for y in range(direction, int(tiles.y) + direction, direction):
+                            path_tiles[path_key].append(start_point + (0, y))
+                    # HORIZONTAL.
+                    else:
+                        direction = 1 if tiles.x > 0 else -1
+                        for x in range(direction, int(tiles.x) + direction, direction):
+                            path_tiles[path_key].append(start_point + (x, 0))
+        # PATH SPRITE.
+        for path_key, path in path_tiles.items():
+            for index, tile in enumerate(path):
+                if 0 < index < len(path) - 1:
+                    prev_tile = path[index - 1] - tile
+                    next_tile = path[index + 1] - tile
+                    if prev_tile.x == next_tile.x:
+                        tile_type = "vertical"
+                    elif prev_tile.y == next_tile.y:
+                        tile_type = "horizontal"
+                    else:
+                        if (prev_tile.y == -1 and next_tile.x == -1) or (
+                            prev_tile.x == -1 and next_tile.y == -1
+                        ):
+                            tile_type = "tl"
+                        elif (prev_tile.y == 1 and next_tile.x == 1) or (
+                            prev_tile.x == 1 and next_tile.y == 1
+                        ):
+                            tile_type = "br"
+                        elif (prev_tile.y == 1 and next_tile.x == -1) or (
+                            prev_tile.x == -1 and next_tile.y == 1
+                        ):
+                            tile_type = "bl"
+                        elif (prev_tile.y == -1 and next_tile.x == 1) or (
+                            prev_tile.x == 1 and next_tile.y == -1
+                        ):
+                            tile_type = "tr"
+
+                    Path(
+                        pos=tile * TILE_SIZE,
+                        surf=self.path_surfs[tile_type],
+                        groups=self.all_sprites,
+                        level=path_key,
+                    )
 
     def input(self):
         if self.current_node:

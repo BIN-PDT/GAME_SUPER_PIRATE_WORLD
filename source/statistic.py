@@ -6,7 +6,7 @@ class Data:
         # AT FIRST.
         self.ui.update_health(self._health)
         # LEVEL STAGE.
-        self.unlocked_level = 3
+        self.unlocked_level = 6
         self.current_level = 0
 
     @property

@@ -260,3 +260,9 @@ class Icon(pygame.sprite.Sprite):
             self.move(dt)
         self.check_state()
         self.animate(dt)
+
+
+class Path(Sprite):
+    def __init__(self, pos, surf, groups, level):
+        super().__init__(pos, surf, groups, Z_LAYERS["path"])
+        self.level = level
