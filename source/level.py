@@ -8,13 +8,20 @@ from enemies import *
 
 
 class Level:
-    def __init__(self, tmx_map, assets, data, switch_command):
+    def __init__(self, tmx_map, assets, data, switch_command, audios):
         self.screen = pygame.display.get_surface()
         # ASSETS.
         self.switch_command = switch_command
         self.data = data
         self.pearl_surf = assets["pearl"]
         self.particle_surfs = assets["particle"]
+
+        self.item_sound = audios["item"]
+        self.item_sound.set_volume(0.2)
+        self.damage_sound = audios["damage"]
+        self.damage_sound.set_volume(0.2)
+        self.pearl_sound = audios["pearl"]
+        self.pearl_sound.set_volume(0.5)
 
         level_data = self.get_level_data(tmx_map, assets)
         self.LEVEL_WIDTH = level_data["cols"] * TILE_SIZE
@@ -29,7 +36,7 @@ class Level:
         self.pearl_sprites = pygame.sprite.Group()
         self.item_sriptes = pygame.sprite.Group()
         # SETUP.
-        self.load_data(tmx_map, assets, data)
+        self.load_data(tmx_map, assets, audios, data)
 
     @staticmethod
     def get_level_data(tmx_map, assets):
@@ -49,7 +56,7 @@ class Level:
             "level_unlock": properties.get("level_unlock", None),
         }
 
-    def load_data(self, tmx_map, assets, data):
+    def load_data(self, tmx_map, assets, audios, data):
         # TILES.
         for layer in ("BG", "Terrain", "FG", "Platforms"):
             for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
@@ -93,6 +100,8 @@ class Level:
                     collision_sprites=self.collision_sprites,
                     semicollision_sprites=self.semicollision_sprites,
                     data=data,
+                    attack_sound=audios["attack"],
+                    jump_sound=audios["jump"],
                 )
             else:
                 if name in ("barrel", "crate"):
@@ -261,6 +270,7 @@ class Level:
                         )
 
     def create_pearl(self, pos, direction):
+        self.pearl_sound.play()
         Pearl(
             pos=pos,
             surf=self.pearl_surf,
@@ -277,6 +287,7 @@ class Level:
     def check_hit_collision(self):
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox):
+                self.damage_sound.play()
                 self.player.get_damage()
                 if isinstance(sprite, Pearl):
                     Particle(sprite.rect.center, self.particle_surfs, self.all_sprites)
@@ -286,6 +297,7 @@ class Level:
         if self.item_sriptes:
             sprites = pygame.sprite.spritecollide(self.player, self.item_sriptes, True)
             if sprites:
+                self.item_sound.play()
                 Particle(sprites[0].rect.center, self.particle_surfs, self.all_sprites)
                 # REWARDED.
                 reward = sprites[0].get_reward()

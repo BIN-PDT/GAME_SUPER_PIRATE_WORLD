@@ -25,6 +25,10 @@ class Game:
             data=self.data,
             switch_command=self.switch_stage,
         )
+        # BACKGROUND MUSIC.
+        pygame.mixer.music.load(join("audio", "starlight_city.mp3"))
+        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.play(-1)
 
     def load_assets(self):
         # MAP.
@@ -80,6 +84,15 @@ class Game:
             "path": import_folder_dict("images", "overworld", "path"),
             "icon": import_folder_dict("images", "overworld", "icon", subordinate=True),
         }
+        # AUDIO.
+        self.audios = {
+            "item": pygame.mixer.Sound(join("audio", "coin.wav")),
+            "attack": pygame.mixer.Sound(join("audio", "attack.wav")),
+            "damage": pygame.mixer.Sound(join("audio", "damage.wav")),
+            "hit": pygame.mixer.Sound(join("audio", "hit.wav")),
+            "jump": pygame.mixer.Sound(join("audio", "jump.wav")),
+            "pearl": pygame.mixer.Sound(join("audio", "pearl.wav")),
+        }
 
     def switch_stage(self, target, unlock=-1):
         if target == "level":
@@ -88,6 +101,7 @@ class Game:
                 assets=self.level_frames,
                 data=self.data,
                 switch_command=self.switch_stage,
+                audios=self.audios,
             )
         else:
             self.current_stage = Overworld(

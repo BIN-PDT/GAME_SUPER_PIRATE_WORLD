@@ -5,9 +5,22 @@ from timers import Timer
 
 class Player(pygame.sprite.Sprite):
     def __init__(
-        self, pos, frames, groups, collision_sprites, semicollision_sprites, data
+        self,
+        pos,
+        frames,
+        groups,
+        collision_sprites,
+        semicollision_sprites,
+        data,
+        attack_sound,
+        jump_sound,
     ):
         super().__init__(groups)
+        # ASSETS.
+        self.attack_sound = attack_sound
+        self.attack_sound.set_volume(0.8)
+        self.jump_sound = jump_sound
+        self.jump_sound.set_volume(0.2)
         # ANIMATION.
         self.frames, self.frame_index = frames, 0
         self.state, self.facing_right = "idle", True
@@ -88,12 +101,14 @@ class Player(pygame.sprite.Sprite):
             self.can_jump = False
             # JUMP FROM FLOOR.
             if self.on_surface["floor"]:
+                self.jump_sound.play()
                 self.timers["wall slide block"].activate()
                 self.direction.y = -self.JUMP_HEIGHT
             # JUMP FROM WALL.
             elif (
                 self.on_surface["left"] or self.on_surface["right"]
             ) and not self.timers["wall slide block"].is_active:
+                self.jump_sound.play()
                 self.timers["wall jump"].activate()
                 self.direction.y = -self.JUMP_HEIGHT
                 self.direction.x = 1 if self.on_surface["left"] else -1
@@ -175,6 +190,7 @@ class Player(pygame.sprite.Sprite):
 
     def attack(self):
         if not self.timers["attack block"].is_active:
+            self.attack_sound.play()
             self.timers["attack block"].activate()
             self.is_attacking = True
             self.frame_index = 0
