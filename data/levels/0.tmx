@@ -210,9 +210,9 @@
     <property name="reverse" type="bool" value="true"/>
    </properties>
   </object>
-  <object id="85" gid="225" x="3132.53" y="703.969" width="48" height="46"/>
+  <object id="85" name="tooth" gid="225" x="3132.53" y="703.969" width="48" height="46"/>
   <object id="86" name="tooth" gid="225" x="448" y="320" width="48" height="46"/>
-  <object id="87" gid="225" x="1316" y="321.5" width="48" height="46"/>
+  <object id="87" name="tooth" gid="225" x="1316" y="321.5" width="48" height="46"/>
  </objectgroup>
  <objectgroup id="2" name="Water">
   <object id="2" name="water" x="0" y="960" width="3840" height="320"/>

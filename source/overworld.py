@@ -5,10 +5,11 @@ from sprites import *
 
 
 class Overworld:
-    def __init__(self, tmx_map, assets, data):
+    def __init__(self, tmx_map, assets, data, switch_command):
         self.screen = pygame.display.get_surface()
         self.data = data
         # ASSETS.
+        self.switch_command = switch_command
         self.path_surfs = assets["path"]
         # GROUP.
         self.all_sprites = WorldSprite(self.data)
@@ -159,6 +160,9 @@ class Overworld:
                 self.move("up")
             if keys[pygame.K_DOWN] and self.current_node.can_move("down"):
                 self.move("down")
+            if keys[pygame.K_RETURN]:
+                self.data.current_level = self.current_node.level
+                self.switch_command("level")
 
     def move(self, direction):
         # GET THE TARGET NODE.

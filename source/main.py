@@ -19,16 +19,23 @@ class Game:
         self.load_assets()
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
-        # self.current_stage = Level(self.TMX_MAPS[0], self.level_frames, self.data)
         self.current_stage = Overworld(
-            self.TMX_OVERWORLD, self.overworld_frames, self.data
+            tmx_map=self.TMX_OVERWORLD,
+            assets=self.overworld_frames,
+            data=self.data,
+            switch_command=self.switch_stage,
         )
 
     def load_assets(self):
         # MAP.
         self.TMX_OVERWORLD = load_pygame(join("data", "overworld", "overworld.tmx"))
         self.TMX_MAPS = {
-            0: load_pygame(join("data", "levels", "omni.tmx")),
+            0: load_pygame(join("data", "levels", "0.tmx")),
+            1: load_pygame(join("data", "levels", "1.tmx")),
+            2: load_pygame(join("data", "levels", "2.tmx")),
+            3: load_pygame(join("data", "levels", "3.tmx")),
+            4: load_pygame(join("data", "levels", "4.tmx")),
+            5: load_pygame(join("data", "levels", "5.tmx")),
         }
         # LEVEL.
         self.level_frames = {
@@ -73,6 +80,28 @@ class Game:
             "path": import_folder_dict("images", "overworld", "path"),
             "icon": import_folder_dict("images", "overworld", "icon", subordinate=True),
         }
+
+    def switch_stage(self, target, unlock=-1):
+        if target == "level":
+            self.current_stage = Level(
+                tmx_map=self.TMX_MAPS[self.data.current_level],
+                assets=self.level_frames,
+                data=self.data,
+                switch_command=self.switch_stage,
+            )
+        else:
+            self.current_stage = Overworld(
+                tmx_map=self.TMX_OVERWORLD,
+                assets=self.overworld_frames,
+                data=self.data,
+                switch_command=self.switch_stage,
+            )
+            # UPDATE PLAYER DATA.
+            if unlock > 0:
+                if unlock > self.data.unlocked_level:
+                    self.data.unlocked_level = unlock
+            else:
+                self.data.health -= 1
 
     def run(self):
         while True:

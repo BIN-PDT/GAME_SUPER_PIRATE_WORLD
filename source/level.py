@@ -8,9 +8,10 @@ from enemies import *
 
 
 class Level:
-    def __init__(self, tmx_map, assets, data):
+    def __init__(self, tmx_map, assets, data, switch_command):
         self.screen = pygame.display.get_surface()
         # ASSETS.
+        self.switch_command = switch_command
         self.data = data
         self.pearl_surf = assets["pearl"]
         self.particle_surfs = assets["particle"]
@@ -18,6 +19,7 @@ class Level:
         level_data = self.get_level_data(tmx_map, assets)
         self.LEVEL_WIDTH = level_data["cols"] * TILE_SIZE
         self.LEVEL_HEIGHT = level_data["rows"] * TILE_SIZE
+        self.LEVEL_UNLOCK = level_data["level_unlock"]
         # GROUP.
         self.all_sprites = AllSprites(level_data)
         self.collision_sprites = pygame.sprite.Group()
@@ -317,10 +319,10 @@ class Level:
             self.player.hitbox.right = self.LEVEL_WIDTH
         # FAILURE CONSTRAINT.
         if self.player.hitbox.bottom >= self.LEVEL_HEIGHT:
-            pass
+            self.switch_command("overworld")
         # SUCCESS CONSTRAINT.
         if self.player.hitbox.colliderect(self.finish_milestone):
-            pass
+            self.switch_command("overworld", self.LEVEL_UNLOCK)
 
     def run(self, dt):
         # UPDATE.
